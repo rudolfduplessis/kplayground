@@ -1,0 +1,76 @@
+kafka-topics --zookeeper zookeeper:2181 --create --topic entity-commands --partitions 3 --replication-factor 3
+kafka-topics --zookeeper zookeeper:2181 --create --topic entity-events --partitions 3 --replication-factor 3
+
+kafka-console-producer --broker-list broker-0:29092 broker-1:29092 broker-2:29092 --topic entity-commands --property "parse.key=true" --property "key.separator=:"
+kafka-console-consumer --bootstrap-server broker-0:29092 broker-1:29092 broker-2:29092 --topic entity-commands --from-beginning --property "print.key=true" --property "key.separator=:"
+kafka-console-consumer --bootstrap-server broker-0:29092 broker-1:29092 broker-2:29092 --topic entity-events --from-beginning --property "print.key=true" --property "key.separator=:"
+kafka-console-consumer --bootstrap-server broker-0:29092 broker-1:29092 broker-2:29092 --topic event-application-Entity-changelog --from-beginning --property "print.key=true" --property "key.separator=:"
+
+
+
+
+
+
+
+broker-0:
+    image: confluentinc/cp-kafka:5.0.0
+    ports:
+      - '9092:9092'
+    networks:
+      - kplayground
+    environment:
+      KAFKA_BROKER_ID: 0
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      KAFKA_ADVERTISED_LISTENERS: LISTENER_DOCKER_INTERNAL://broker-0:29092,LISTENER_DOCKER_EXTERNAL://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: LISTENER_DOCKER_INTERNAL:PLAINTEXT,LISTENER_DOCKER_EXTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: LISTENER_DOCKER_INTERNAL
+      KAFKA_DEFAULT_REPLICATION_FACTOR: 3
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'false'
+    volumes:
+      - /opt/dev/broker-0/data:/var/lib/kafka/data:rw
+    depends_on:
+      - zookeeper
+
+  broker-1:
+    image: confluentinc/cp-kafka:5.0.0
+    ports:
+      - '9093:9092'
+    networks:
+      - kplayground
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      KAFKA_ADVERTISED_LISTENERS: LISTENER_DOCKER_INTERNAL://broker-1:29092,LISTENER_DOCKER_EXTERNAL://localhost:9093
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: LISTENER_DOCKER_INTERNAL:PLAINTEXT,LISTENER_DOCKER_EXTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: LISTENER_DOCKER_INTERNAL
+      KAFKA_DEFAULT_REPLICATION_FACTOR: 3
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'false'
+    volumes:
+      - /opt/dev/broker-1/data:/var/lib/kafka/data:rw
+    depends_on:
+      - zookeeper
+
+  broker-2:
+    image: confluentinc/cp-kafka:5.0.0
+    ports:
+      - '9094:9092'
+    networks:
+      - kplayground
+    environment:
+      KAFKA_BROKER_ID: 2
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      KAFKA_ADVERTISED_LISTENERS: LISTENER_DOCKER_INTERNAL://broker-2:29092,LISTENER_DOCKER_EXTERNAL://localhost:9094
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: LISTENER_DOCKER_INTERNAL:PLAINTEXT,LISTENER_DOCKER_EXTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: LISTENER_DOCKER_INTERNAL
+      KAFKA_DEFAULT_REPLICATION_FACTOR: 3
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'false'
+    volumes:
+      - /opt/dev/broker-2/data:/var/lib/kafka/data:rw
+    depends_on:
+      - zookeeper
+
+
+

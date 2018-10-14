@@ -3,22 +3,105 @@ services:
   zookeeper:
     image: zookeeper:3.4.9
     ports:
-    - '2181:2181'
+      - '2181:2181'
     networks:
-    - kplayground
+      - kplayground
+    volumes:
+      - /opt/dev/zookeeper:/data:rw
 
-  kafka:
+  broker-0:
     image: confluentinc/cp-kafka:5.0.0
     ports:
-    - '29092:29092'
+    - '9092:9092'
+    networks:
+    - kplayground
+    environment:
+      KAFKA_BROKER_ID: 0
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://broker-0:29092,EXTERNAL://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_DEFAULT_REPLICATION_FACTOR: 3
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'false'
+    volumes:
+    - /opt/dev/broker-0/data:/var/lib/kafka/data:rw
+    depends_on:
+    - zookeeper
+
+  broker-1:
+    image: confluentinc/cp-kafka:5.0.0
+    ports:
+    - '9093:9093'
     networks:
     - kplayground
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
-      KAFKA_ADVERTISED_LISTENERS: 'PLAINTEXT://kafka:29092'
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-    #volumes:
-    #- /opt/dev/cp-kafka/data:/var/lib/kafka/data:rw
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://broker-1:29092,EXTERNAL://localhost:9093
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_DEFAULT_REPLICATION_FACTOR: 3
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'false'
+    volumes:
+    - /opt/dev/broker-1/data:/var/lib/kafka/data:rw
+    depends_on:
+    - zookeeper
+
+  broker-2:
+    image: confluentinc/cp-kafka:5.0.0
+    ports:
+    - '9094:9094'
+    networks:
+    - kplayground
+    environment:
+      KAFKA_BROKER_ID: 2
+      KAFKA_ZOOKEEPER_CONNECT: 'zookeeper:2181'
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://broker-2:29092,EXTERNAL://localhost:9094
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_DEFAULT_REPLICATION_FACTOR: 3
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 3
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'false'
+    volumes:
+    - /opt/dev/broker-2/data:/var/lib/kafka/data:rw
+    depends_on:
+    - zookeeper
+
+  zoonavigator-api:
+    image: elkozmon/zoonavigator-api:0.4.0
+    networks:
+    - kplayground
+    environment:
+      SERVER_HTTP_PORT: 9000
+
+  zoonavigator-web:
+    image: elkozmon/zoonavigator-web:0.4.0
+    ports:
+    - "8093:8000"
+    networks:
+    - kplayground
+    environment:
+      API_HOST: "zoonavigator-api"
+      API_PORT: 9000
+      AUTO_CONNECT_CONNECTION_STRING: "zookeeper:2181"
+
+  kafka-manager:
+    image: sheepkiller/kafka-manager:latest
+    ports:
+    - "9000:9000"
+    networks:
+    - kplayground
+    depends_on:
+    - zookeeper
+    - broker-0
+    - broker-1
+    - broker-2
+    environment:
+      ZK_HOSTS: zookeeper:2181
+      APPLICATION_SECRET: letmein
+      KM_ARGS: -Djava.net.preferIPv4Stack=true
+
 networks:
   ? kplayground
